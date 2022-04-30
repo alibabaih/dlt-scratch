@@ -5,3 +5,7 @@
 
 /register-nodes-bulk
 /register-and-broadcast-node
+
+readme/blockchain-1.png
+readme/blockchain-2.png
+readme/blockchain-3.png
