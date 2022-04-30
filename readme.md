@@ -1,3 +1,7 @@
+# TODO
+
+rename some vars and reformat the code
+
 `node dev/test.js`
 `node dev/api.js`
 `npm start`
