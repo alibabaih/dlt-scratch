@@ -2,33 +2,32 @@ const sha256 = require('sha256');
 const uuid = require('uuid/v1');
 const currentNodeUrl = process.argv[3];
 
-// function Blockchain() {
-//     this.chain = [];
-//     this.pendingTransactions = [];
-// }
-
-class Blockchain {
+class Ledger {
 
     constructor() {
         this.chain = [];
         this.pendingTransactions = [];
-
         this.currentNodeUrl = currentNodeUrl;
         this.networkNodes = [];
 
-        //create genesis block
-        this.createNewBlock(0, '0', '0');
+        this.createNewBlock(0, '0', '0'); //create genesis block
     }
-
     
 }
 
-Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
+/**
+ * Create new block
+ * @example
+ * ledger.createNewBlock(00, 'previousBlockHash', 'hash');
+ * @returns {Object} Returns the block object.
+ */
+Ledger.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
+
     const newBlock = {
         index: this.chain.length +1,
         timestamp: Date.now(),
         transactions: this.pendingTransactions,
-        nonce: nonce, //PoW
+        nonce: nonce,
         hash: hash,
         previousBlockHash: previousBlockHash
     };
@@ -39,11 +38,25 @@ Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
     return newBlock;
 };
 
-Blockchain.prototype.getLastBlock = function() {
+/**
+ * Get last block
+ * @example
+ * ledger.getLastBlock();
+ * @returns {Object} Returns the block object.
+ */
+Ledger.prototype.getLastBlock = function() {
+
     return this.chain[this.chain.length -1];
 };
 
-Blockchain.prototype.createNewTransaction = function(amount, sender, recipient) {
+/**
+ * Creates new transaction
+ * @example
+ * ledger.createNewTransaction(1000, 'sender', 'recipient');
+ * @returns {Object} Returns the transaction object.
+ */
+Ledger.prototype.createNewTransaction = function(amount, sender, recipient) {
+
     const newTransaction = {
         amount: amount,
         sender: sender,
@@ -51,34 +64,47 @@ Blockchain.prototype.createNewTransaction = function(amount, sender, recipient) 
         transactionId: uuid().split('-').join('')
     };
 
-    // this.pendingTransactions.push(newTransaction);
-
-    // return this.getLastBlock()['index'] + 1;
     return newTransaction;
 };
 
-Blockchain.prototype.addTransactionToPendingTransactions = function(transactionObj) {
+/**
+ * Add new pending transaction
+ * @example
+ * ledger.addTransactionToPendingTransactions(transactionObj);
+ * @returns {Object} Returns the block object.
+ */
+Ledger.prototype.addTransactionToPendingTransactions = function(transactionObj) {
+    
     this.pendingTransactions.push(transactionObj);
+
     return this.getLastBlock()['index'] + 1;
 };
 
-Blockchain.prototype.hashBlock = function(previousBlockHash, currentBlockData, nonce) {
-    // return defined langth
+/**
+ * Calculate defined length
+ * @example
+ * ledger.hashBlock('previousBlockHash', 'currentBlockData', 000);
+ * @returns {String} Returns the value of the equation.
+ */
+Ledger.prototype.hashBlock = function(previousBlockHash, currentBlockData, nonce) {
+
     const dataAsString = previousBlockHash + nonce.toString() + JSON.stringify(currentBlockData);
     const hash = sha256(dataAsString);
+
     return hash;
 };
 
-Blockchain.prototype.proofOfWork = function(previousBlockHash, currentBlockData) {
-    // bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce)
-    // we need to manipulate with nonce to get leading 4 zeros in hash function
-    //by doing increment in nonce
-    // the same idea may be in inshurance contract
-
-    // repeatedly hash block until it finds correct hash => hash should generate 4 zeros '0000AFBGBSDFGBS'
-    // uses current block data for the hash, but also the previousBlockHash
-    // continuously changes nonce value until it finds the correct hash
-    // returns to us the nonce value that creates the correct hash
+/**
+ * Add new block in ledger
+ * 
+ * Manipulate with nonce to get leading 4 zeros in hash function by doing increment in nonce.
+ * Hash should generate 4 zeros '0000AFBGBSDFGBS'. Uses current block data for the hash, 
+ * and also the previousBlockHash, continuously changes nonce value until it finds the correct hash.
+ * @example
+ * ledger.proofOfWork('previousBlockHash', 'currentBlockData');
+ * @returns {Number} Returns the nonce.
+ */
+Ledger.prototype.proofOfWork = function(previousBlockHash, currentBlockData) {
 
     let nonce = 0;
     let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
@@ -90,16 +116,23 @@ Blockchain.prototype.proofOfWork = function(previousBlockHash, currentBlockData)
     return nonce;
 }
 
-Blockchain.prototype.chainIsValid = function(blockchain) {
-    //validate by iterating through each block in the blockchain
-    //and check previous block hash is the same as the hash 
+/**
+ * Validates the chain
+ *
+ * Validate by iterating through each block in the blockchain 
+ * and check previous block hash is the same as the hash 
+ * @example
+ * ledger.chainIsValid(blockchain);
+ * @returns {Boolean}
+ */
+Ledger.prototype.chainIsValid = function(blockchain) {
+
     let validChain = true;
 
     for(let i = 1; i < blockchain.length; i++) { //do not check genesis block
         const currentBlock = blockchain[i];
         const previousBlock = blockchain[i - 1];
 
-        //TODO: delete it as we chach the transactions, that they have leading 0000
         const blockHash = this.hashBlock(
             previousBlock['hash'], 
             {
@@ -130,17 +163,32 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
     return validChain;
 };
 
-Blockchain.prototype.getBlock = function(blockHash) {
+/**
+ * Get block
+ * @example
+ * ledger.getBlock('blockHash');
+ * @returns {Object}
+ */
+Ledger.prototype.getBlock = function(blockHash) {
+
     let correctBlock = null;
     this.chain.forEach(block => {
         if(block.hash === blockHash) {
             correctBlock = block;
         }
     });
+
     return correctBlock;
 };
 
-Blockchain.prototype.getTransaction = function(transactionId) {
+/**
+ * Get transaction
+ * @example
+ * ledger.getBlock('transactionId');
+ * @returns {Object}
+ */
+Ledger.prototype.getTransaction = function(transactionId) {
+
     let correctTransaction = null;
     let correctBlock = null;
     this.chain.forEach(block => {
@@ -151,13 +199,20 @@ Blockchain.prototype.getTransaction = function(transactionId) {
             }
         });
     }) ;
+
     return {
         transaction: correctTransaction,
         block: correctBlock
     };
 };
 
-Blockchain.prototype.getAddressData = function(address) {
+/**
+ * Get address data
+ * @example
+ * ledger.getAddressData('address');
+ * @returns {Object}
+ */
+Ledger.prototype.getAddressData = function(address) {
     const addressTransactions = [];
     this.chain.forEach(block => {
         block.transactions.forEach(transaction => {
@@ -182,4 +237,4 @@ Blockchain.prototype.getAddressData = function(address) {
     }
 };
 
-module.exports = Blockchain;
+module.exports = Ledger;

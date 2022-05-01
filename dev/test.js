@@ -1,11 +1,10 @@
-const Blockchain = require('./blockchain');
+const Ledger = require('./ledger');
 
-const bitcoin = new Blockchain();
+const ledger = new Ledger();
 
-bitcoin.createNewBlock(0, '0x0000', '0x0001')
-bitcoin.createNewTransaction(10, 'sender1', 'recipient1')
+ledger.createNewBlock(0, '0x0000', '0x0001')
+ledger.createNewTransaction(10, 'sender1', 'recipient1')
 
-//mine a new block
-bitcoin.createNewBlock(1, '0x0001', '0x0002')
-// console.log(bitcoin);
-console.log(bitcoin.chain[1]);
+ledger.createNewBlock(1, '0x0001', '0x0002')
+
+console.log(ledger.chain[1]);

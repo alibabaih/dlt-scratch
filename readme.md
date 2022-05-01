@@ -1,15 +1,22 @@
-# TODO
+# Prerequisites
 
-rename some vars and reformat the code
+`nodejs v10`
 
-`node dev/test.js`
-`node dev/api.js`
-`npm start`
-`npm run node_1`
+# Install
 
-/register-nodes-bulk
-/register-and-broadcast-node
+```
+git clone <repo> .
+npm install
+```
+<!-- reformat the code -->
 
-readme/blockchain-1.png
+Run only one node of the DLT: `npm run node_1`
+
+Run all nodes: `npm run dev`
+
+Run tests: `node dev/test.js`
+
+
+<!-- readme/blockchain-1.png
 readme/blockchain-2.png
-readme/blockchain-3.png
+readme/blockchain-3.png -->
