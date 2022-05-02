@@ -242,6 +242,12 @@ Ledger.prototype.getAddressData = function(address) {
     }
 };
 
+/**
+ * Get transactions
+ * @example
+ * ledger.getTransactions();
+ * @returns {Array}
+ */
 Ledger.prototype.getTransactions = function() {
 
     const notEvaluatedTransactions = [];
@@ -265,18 +271,29 @@ Ledger.prototype.getTransactions = function() {
                     }
                 });
             }
-            
-           
         });
     }) ;
 
     return notEvaluatedTransactions;
 };
 
+/**
+ * Set insurance compensation
+ * @example
+ * ledger.insuranceCompensation(100);
+ * @returns {Number}
+ */
 Ledger.prototype.insuranceCompensation = function(amount) {
+
     return amount * INSURANCE_COMPENSATION_FACTOR;
 };
 
+/**
+ * Get transactions
+ * @example
+ * ledger.addToEvaluatedTransactions("b31ada20ca3d11ec98f6c7a573dcd975");
+ * @returns {Array}
+ */
 Ledger.prototype.addToEvaluatedTransactions = function(transactionId) {
     
     return this.evaluatedTransactions.push(transactionId); 

@@ -28,9 +28,7 @@ const task = cron.schedule('*/1 * * * *', () =>  {
     if(typeof notEvaluatedTransactions !== 'undefined' && notEvaluatedTransactions.length > 0) {
         notEvaluatedTransactions.forEach(transaction => {
 
-            console.log('transaction: ' + transaction.transactionId);
-            // const oracleConditions = JSON.parse(oracle.getConditions());
-            // console.log('oracleConditions: '+ oracleConditions);
+            console.log('transactionId: ' + transaction.transactionId);
             if(true) { //oracleConditions.condition
 
                 const insuranceCompensation = ledger.insuranceCompensation(transaction.amount);
@@ -38,7 +36,6 @@ const task = cron.schedule('*/1 * * * *', () =>  {
                 const insurer = "insurance-mutual-fund"
                 const newTransaction = ledger.createNewTransaction(insuranceCompensation, insurer, insurant, null, null);
                 ledger.addToEvaluatedTransactions(transaction.transactionId);
-                // ledger.addTransactionToPendingTransactions(transaction.transactionId);
 
                 let requestPromises = [];
                 ledger.networkNodes.forEach(networkNodeUrl => {
@@ -50,21 +47,15 @@ const task = cron.schedule('*/1 * * * *', () =>  {
                     };
 
                     requestPromises.push(rp(requestOptions)); 
-
                 });
 
-                Promise.all(requestPromises).then((data) => {
-                    console.log("data from promise: " + data);
-                    // res.json({note: 'transaction created and braodcast successful'});
+                Promise.all(requestPromises).then(() => {
                 }).catch(err => { console.log(err) });
             } else {
-                console.log('oracle responded that insurance accident did not happened');
+                console.log('Oracle responded that insurance accident did not happened');
             }
         });
     }
-
-    
-
 }, {
     scheduled: true
 });
@@ -102,11 +93,9 @@ app.post('/transaction/broadcast', function(req, res) {
         };
 
         requestPromises.push(rp(requestOptions)); 
-
     });
 
-    Promise.all(requestPromises).then((data) => {
-        console.log(data)
+    Promise.all(requestPromises).then(() => {
         res.json({note: 'transaction created and braodcust successful'});
     });
 });
@@ -120,10 +109,6 @@ app.get('/mine', function(req, res) {
     }
     const nonce = ledger.proofOfWork(previousBlockHash, currentBlockData);
     const blockHash = ledger.hashBlock(previousBlockHash, currentBlockData, nonce);
-
-    // //send some reword to the miner
-    // ledger.createNewTransaction(12.5, "00", nodeAddress);
-
     const newBlock = ledger.createNewBlock(nonce, previousBlockHash, blockHash);
     
     const requestPromises = [];
@@ -138,6 +123,7 @@ app.get('/mine', function(req, res) {
         requestPromises.push(rp(requestOptions)); 
     });
 
+    // send some reword to the miner
     Promise.all(requestPromises).then(data => {
         const requestOptions = {
             uri: ledger.currentNodeUrl + '/transaction/broadcast',
@@ -157,7 +143,6 @@ app.get('/mine', function(req, res) {
             block: newBlock
         });
     });
-
 });
 
 app.post('/receive-new-block', function(req, res) {
@@ -189,7 +174,6 @@ app.post('/register-and-broadcast-node', function(req, res) {
 
     const regNodesPromises = [];
     ledger.networkNodes.forEach(networkNodeUrl => {
-        //'/register-node'
         const requestOptions = {
             uri: networkNodeUrl + '/register-node',
             method: 'POST',
@@ -201,7 +185,6 @@ app.post('/register-and-broadcast-node', function(req, res) {
     });
 
     Promise.all(regNodesPromises).then(data => {
-        //use the data
         const bulkRegisterOptions = {
             uri: newNodeUrl + '/register-nodes-bulk',
             method: 'POST',
@@ -319,8 +302,6 @@ app.get('/block-exporer', function(req, res) {
     res.sendFile('./block-explorer/index.html', {root: __dirname});
 });
 
-//TODO chaould be in cron
-// https://stackoverflow.com/questions/66987333/start-stop-cronjob-on-button-click-in-nodejs-express-app
 app.get('/check-contracts', function(req, res) {
     task.start();
     console.log('test cronjob running every 10secs');
@@ -339,7 +320,6 @@ app.post('/evaluate-transactions', function(req, res) {
         evaluatedTransactions: evaluatedTransactions,
         requestBody: req.body
     });
-    
 });
 
 app.listen(port, function() {
