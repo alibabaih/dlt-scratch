@@ -2,6 +2,8 @@ const sha256 = require('sha256');
 const uuid = require('uuid/v1');
 const currentNodeUrl = process.argv[3];
 
+const INSURANCE_COMPENSATION_FACTOR = 100;
+
 class Ledger {
 
     constructor() {
@@ -9,6 +11,7 @@ class Ledger {
         this.pendingTransactions = [];
         this.currentNodeUrl = currentNodeUrl;
         this.networkNodes = [];
+        this.evaluatedTransactions = [];
 
         this.createNewBlock(0, '0', '0'); //create genesis block
     }
@@ -55,12 +58,14 @@ Ledger.prototype.getLastBlock = function() {
  * ledger.createNewTransaction(1000, 'sender', 'recipient');
  * @returns {Object} Returns the transaction object.
  */
-Ledger.prototype.createNewTransaction = function(amount, sender, recipient) {
+Ledger.prototype.createNewTransaction = function(amount, sender, recipient, evaluationDate, oracle) {
 
     const newTransaction = {
         amount: amount,
         sender: sender,
         recipient: recipient,
+        evaluationDate: evaluationDate,
+        oracle: oracle,
         transactionId: uuid().split('-').join('')
     };
 
@@ -235,6 +240,46 @@ Ledger.prototype.getAddressData = function(address) {
         addressTransactions: addressTransactions,
         addressBalance: balance
     }
+};
+
+Ledger.prototype.getTransactions = function() {
+
+    const notEvaluatedTransactions = [];
+    currentDate = new Date().valueOf()
+
+    this.chain.forEach(block => {
+        block.transactions.forEach(transaction => {
+            
+            const isTransactionContainsOracle = !isNaN(transaction.evaluationDate);
+            
+            if(this.evaluatedTransactions.length === 0) {
+                // if(currentDate >= transaction.evaluationDate && isTransactionContainsOracle) {
+                if(isTransactionContainsOracle) {
+                    notEvaluatedTransactions.push(transaction);
+                }
+            } else {
+                this.evaluatedTransactions.forEach(evaluatedTransaction => {
+                    // if(currentDate >= transaction.evaluationDate && isTransactionContainsOracle && 
+                    if(isTransactionContainsOracle && !this.evaluatedTransactions.includes(transaction.transactionId) ) {
+                        notEvaluatedTransactions.push(transaction);
+                    }
+                });
+            }
+            
+           
+        });
+    }) ;
+
+    return notEvaluatedTransactions;
+};
+
+Ledger.prototype.insuranceCompensation = function(amount) {
+    return amount * INSURANCE_COMPENSATION_FACTOR;
+};
+
+Ledger.prototype.addToEvaluatedTransactions = function(transactionId) {
+    
+    return this.evaluatedTransactions.push(transactionId); 
 };
 
 module.exports = Ledger;

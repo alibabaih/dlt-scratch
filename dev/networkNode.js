@@ -1,7 +1,9 @@
 var express = require('express')
+const cron = require('node-cron');
 const bodyParser = require('body-parser')
 var app = express()
 const Ledger = require('./ledger');
+const Oracle = require('./oracle');
 const uuid = require('uuid/v1');
 const rp = require('request-promise');
 const port = process.argv[2];
@@ -10,8 +12,62 @@ const nodeAddress = uuid().split('-').join('');
 
 const ledger = new Ledger();
 
+const oracle = new Oracle();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
+
+// creates the cronjob instance with startScheduler 
+//each 1 minute
+const task = cron.schedule('*/1 * * * *', () =>  {
+
+    console.log('test cronjob running every 10secs');
+
+    const notEvaluatedTransactions = ledger.getTransactions();
+    console.log('notEvaluatedTransactions: ' + notEvaluatedTransactions);
+    if(typeof notEvaluatedTransactions !== 'undefined' && notEvaluatedTransactions.length > 0) {
+        notEvaluatedTransactions.forEach(transaction => {
+
+            console.log('transaction: ' + transaction.transactionId);
+            // const oracleConditions = JSON.parse(oracle.getConditions());
+            // console.log('oracleConditions: '+ oracleConditions);
+            if(true) { //oracleConditions.condition
+
+                const insuranceCompensation = ledger.insuranceCompensation(transaction.amount);
+                const insurant = transaction.sender;
+                const insurer = "insurance-mutual-fund"
+                const newTransaction = ledger.createNewTransaction(insuranceCompensation, insurer, insurant, null, null);
+                ledger.addToEvaluatedTransactions(transaction.transactionId);
+                // ledger.addTransactionToPendingTransactions(transaction.transactionId);
+
+                let requestPromises = [];
+                ledger.networkNodes.forEach(networkNodeUrl => {
+                    const requestOptions = {
+                        uri: networkNodeUrl + '/transaction',
+                        method: 'POST',
+                        body: newTransaction,
+                        json: true
+                    };
+
+                    requestPromises.push(rp(requestOptions)); 
+
+                });
+
+                Promise.all(requestPromises).then((data) => {
+                    console.log("data from promise: " + data);
+                    // res.json({note: 'transaction created and braodcast successful'});
+                }).catch(err => { console.log(err) });
+            } else {
+                console.log('oracle responded that insurance accident did not happened');
+            }
+        });
+    }
+
+    
+
+}, {
+    scheduled: true
+});
 
 app.get('/', function(req, res) {
     res.send('Hi! This is DLT POC. Please, investigate endpoints in doc`s.')
@@ -28,7 +84,12 @@ app.post('/transaction', function(req, res) {
 });
 
 app.post('/transaction/broadcast', function(req, res) {
-    const newTransaction = ledger.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+    // const newTransaction = ledger.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient,
+    //                        req.body.evaluationDate, req.body.oracle);
+    // ledger.addTransactionToPendingTransactions(newTransaction);
+    date = Date.parse(req.body.evaluationDate); //Date.parse("2022-05-03 13:21:34")
+    const newTransaction = ledger.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient,
+        date, req.body.oracle);
     ledger.addTransactionToPendingTransactions(newTransaction);
 
     const requestPromises = [];
@@ -256,6 +317,29 @@ app.get('/address/:address', function(req, res) {
 //frontend
 app.get('/block-exporer', function(req, res) {
     res.sendFile('./block-explorer/index.html', {root: __dirname});
+});
+
+//TODO chaould be in cron
+// https://stackoverflow.com/questions/66987333/start-stop-cronjob-on-button-click-in-nodejs-express-app
+app.get('/check-contracts', function(req, res) {
+    task.start();
+    console.log('test cronjob running every 10secs');
+    res.json({
+        message: 'Scheduler started!'
+    });
+});
+
+app.post('/evaluate-transactions', function(req, res) {
+
+    const transactionId = req.body.transactionId;
+    const evaluatedTransactions = ledger.addToEvaluatedTransactions(transactionId);
+    res.json({
+        note: "Transaction evaluated",
+        transactionId: transactionId,
+        evaluatedTransactions: evaluatedTransactions,
+        requestBody: req.body
+    });
+    
 });
 
 app.listen(port, function() {

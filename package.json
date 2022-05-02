@@ -4,19 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node dev/test.js", 
+    "test": "node dev/test.js",
+    "node_12": "node dev/networkNode.js 3000 http://localhost:3000",
     "node_1": "nodemon --watch dev -e js dev/networkNode.js 3000 http://localhost:3000",
     "node_2": "nodemon --watch dev -e js dev/networkNode.js 3001 http://localhost:3001",
     "node_3": "nodemon --watch dev -e js dev/networkNode.js 3002 http://localhost:3002",
     "node_4": "nodemon --watch dev -e js dev/networkNode.js 3003 http://localhost:3003",
     "node_5": "nodemon --watch dev -e js dev/networkNode.js 3004 http://localhost:3004",
-    "dev": "concurrently --kill-others \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\" \"npm run node_5\""
+    "dev": "concurrently --kill-others \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\" \"npm run node_5\"",
+    "oracle": "nodemon --watch dev -e js oracle/app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
+    "node-cron": "^3.0.0",
     "nodemon": "^1.17.3",
     "request-promise": "^4.2.2",
     "sha256": "^0.2.0",
