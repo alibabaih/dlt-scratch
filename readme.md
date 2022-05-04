@@ -1,13 +1,21 @@
 # Prerequisites
 
-`nodejs v10`
+For development:
+
+```
+node --version
+v10.19.0
+npm --version
+6.14.4
+```
+
+For deployment:
+
+```
+docker run -it -p 0.0.0.0:3000:3000 -v $(pwd):/opt node:10.19.0 bash
+```
 
 # Install
-
-```
-git clone <repo> .
-npm install
-```
 
 Run only one node of the DLT: `npm run node_1`
 
@@ -47,12 +55,8 @@ Run tests: `node dev/test.js`
 
 - Anybody who made a deposit may create a transaction (may create an insurance):
 
-    amount: 1$
-    sender: person's id
-    evaluationDate: до какого срока должна работать страховка
-    oracle: какой тип оракула использовать
-
-```{
+```
+{
     "amount": 1,
     "sender": "person-with-id-1",
     "recipient": "insurance-mutual-fund",
@@ -61,10 +65,9 @@ Run tests: `node dev/test.js`
 }
 ```
 
-- Такие транзакции могут быть сделаны пользователями, кто был акцептирован в приложении (или веб сервисе). Все транзакции попрадают в pending transactions, пока не будет создан новый блок.
-- Транзакции попадают в блок
-- Согласно заданному расписанию, запускается проверка, если настало время эвалюировать транзакции (страховые полисы)
+- Such transactions can be made by users who have been accepted in the application (or web service). All transactions fall into pending transactions until a new block is created.
+- According to the specified schedule, a check is started if it is time to evaluate transactions (insurance policies)
 `http://localhost:3000/check-contracts`
-- Если время страхового полиса завершилось, то нужно проверить, если страховой случай произошёл или нет
-- Если страховой случай не произошёл, то страховая выплата не производится и депозит страховой выплаты не производится
-Если страховой случай произошёл, то происходит выплата, при этом выплата производится от лица фонда "insurance-mutual-fund" пользователю "person-with-id-1". 
+- If the time of the insurance policy has ended, then you need to check if the insured event has occurred or not
+- If the insured event has not occurred, then the insurance payment is not made and the deposit of the insurance payment is not made
+- If an insured event has occurred, then a payment is made, while the payment is made on behalf of the insurance-mutual-fund to the user "person-with-id-1".
