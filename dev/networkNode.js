@@ -6,6 +6,8 @@ const Ledger = require('./ledger');
 const Oracle = require('./oracle');
 const uuid = require('uuid/v1');
 const rp = require('request-promise');
+const swaggerDocs = require("./utils/swagger");
+
 const port = process.argv[2];
 
 const nodeAddress = uuid().split('-').join('');
@@ -60,10 +62,32 @@ const task = cron.schedule('*/1 * * * *', () =>  {
     scheduled: true
 });
 
+/**
+ * @openapi
+ * /:
+ *  get:
+ *     tags:
+ *     - Index
+ *     description: Responds if the app is up and running
+ *     responses:
+ *       200:
+ *         description: App is up and running
+ */
 app.get('/', function(req, res) {
     res.send('Hi! This is DLT POC. Please, investigate endpoints in doc`s.')
 });
 
+/**
+ * @openapi
+ * '/blockchain':
+ *  get:
+ *     tags:
+ *     - Blockchain
+ *     summary: Get a full blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/blockchain', function(req, res) {
    res.send(ledger);
 });
@@ -74,6 +98,34 @@ app.post('/transaction', function(req, res) {
     res.json({note: `transaction will be added in ${blockIndex}`});
 });
 
+/**
+ * @openapi
+ * '/transaction/broadcast':
+ *  post:
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              amount:
+ *                type: integer
+ *                format: int64
+ *              sender:
+ *                type: string
+ *              recipient:
+ *                type: string
+ *            example:
+ *              amount: 100000
+ *              sender: insurance-liquidity-provider
+ *              recipient: insurance-mutual-fund
+ *    responses:
+ *      200:
+ *        description: Success
+ *    tags:
+ *    - Blockchain
+ *    summary: Create new rtansactions (new insurance contract) and place it it pending
+ */
 app.post('/transaction/broadcast', function(req, res) {
     // const newTransaction = ledger.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient,
     //                        req.body.evaluationDate, req.body.oracle);
@@ -100,6 +152,17 @@ app.post('/transaction/broadcast', function(req, res) {
     });
 });
 
+/**
+ * @openapi
+ * '/mine':
+ *  get:
+ *     tags:
+ *     - Blockchain
+ *     summary: Get "mine" a new block in blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/mine', function(req, res) {
     const lastBlock = ledger.getLastBlock();
     const previousBlockHash = lastBlock['hash'];
@@ -165,7 +228,27 @@ app.post('/receive-new-block', function(req, res) {
     }
 });
 
-//register a new node and broadcast it the network
+/**
+ * @openapi
+ * '/register-and-broadcast-node':
+ *  post:
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              allNetworkNodes:
+ *                type: string
+ *            example:
+ *              newNodeUrl: http://localhost:3004
+ *    responses:
+ *      200:
+ *        description: Success
+ *    tags:
+ *    - Blockchain
+ *    summary: Register a new node and broadcast it the network blockchain
+ */
 app.post('/register-and-broadcast-node', function(req, res) {
     const newNodeUrl = req.body.newNodeUrl;
     if(ledger.networkNodes.indexOf(newNodeUrl) == -1) {
@@ -198,7 +281,27 @@ app.post('/register-and-broadcast-node', function(req, res) {
     }); 
 });
 
-//register a node with the network
+/**
+ * @openapi
+ * '/register-node':
+ *  post:
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              allNetworkNodes:
+ *                type: string
+ *            example:
+ *              newNodeUrl: http://localhost:3004
+ *    responses:
+ *      200:
+ *        description: Success
+ *    tags:
+ *    - Blockchain
+ *    summary: Register a node with the network blockchain
+ */
 app.post('/register-node', function(req, res) {
     const newNodeUrl = req.body.newNodeUrl;
 
@@ -211,7 +314,27 @@ app.post('/register-node', function(req, res) {
     res.json({note: 'New node registered'});
 });
 
-//register multiple nodes at once
+/**
+ * @openapi
+ * '/register-nodes-bulk':
+ *  post:
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              allNetworkNodes:
+ *                type: array
+ *            example:
+ *              allNetworkNodes: ["http://localhost:3001", "http://localhost:3002", "http://localhost:3002", "http://localhost:3002"]
+ *    responses:
+ *      200:
+ *        description: Success
+ *    tags:
+ *    - Blockchain
+ *    summary: Register all nodes at ones in blockchain
+ */
 app.post('/register-nodes-bulk', function(req, res) {
     const allNetworkNodes = req.body.allNetworkNodes;
     allNetworkNodes.forEach(networkNodeUrl => {
@@ -224,6 +347,17 @@ app.post('/register-nodes-bulk', function(req, res) {
     res.json({note: 'Bulk registration successful'});
 });
 
+/**
+ * @openapi
+ * '/consensus':
+ *  get:
+ *     tags:
+ *     - Blockchain
+ *     summary: Synchronize nodes in blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/consensus', function(req, res) {
     const requestPromises = [];
     ledger.networkNodes.forEach(networkNodeUrl => {
@@ -272,6 +406,24 @@ app.get('/consensus', function(req, res) {
     });
 });
 
+/**
+ * @openapi
+ * '/block/:blockHash':
+ *  get:
+ *     parameters:
+ *     - in: path
+ *       name: blockHash
+ *       required: true
+ *       schema:
+ *         type: number
+ *         description: The block hash
+ *     tags:
+ *     - Blockchain
+ *     summary: Get a block in blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/block/:blockHash', function(req, res) {
     const blockHash = req.params.blockHash;
     const correctBlock = ledger.getBlock(blockHash);
@@ -280,6 +432,24 @@ app.get('/block/:blockHash', function(req, res) {
     });
 });
 
+/**
+ * @openapi
+ * '/transaction/:transactionId':
+ *  get:
+ *     parameters:
+ *     - in: path
+ *       name: transactionId
+ *       required: true
+ *       schema:
+ *         type: number
+ *         description: The transaction ID
+ *     tags:
+ *     - Blockchain
+ *     summary: Get a transaction in blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/transaction/:transactionId', function(req, res) {
     const transactionId = req.params.transactionId;
     const transactionData = ledger.getTransaction(transactionId);
@@ -289,6 +459,24 @@ app.get('/transaction/:transactionId', function(req, res) {
     });
 });
 
+/**
+ * @openapi
+ * '/address/:address':
+ *  get:
+ *     parameters:
+ *     - in: path
+ *       name: address
+ *       required: true
+ *       schema:
+ *         type: number
+ *         description: The address ID
+ *     tags:
+ *     - Blockchain
+ *     summary: Get an address of sender or recipient in blockchain
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/address/:address', function(req, res) {
     const address = req.params.address;
     const addressData = ledger.getAddressData(address);
@@ -297,11 +485,32 @@ app.get('/address/:address', function(req, res) {
     });
 });
 
-//frontend
+/**
+ * @openapi
+ * '/block-exporer':
+ *  get:
+ *     tags:
+ *     - Blockchain
+ *     summary: Frontend block explorer
+ *     responses:
+ *       304:
+ *         description: Success
+ */
 app.get('/block-exporer', function(req, res) {
     res.sendFile('./block-explorer/index.html', {root: __dirname});
 });
 
+/**
+ * @openapi
+ * '/check-contracts':
+ *  get:
+ *     tags:
+ *     - Blockchain
+ *     summary: Start schedule for ther oracule
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 app.get('/check-contracts', function(req, res) {
     task.start();
     console.log('test cronjob running every 10secs');
@@ -324,4 +533,6 @@ app.post('/evaluate-transactions', function(req, res) {
 
 app.listen(port, function() {
      console.log(`listening on port ${port}`);
+
+     swaggerDocs(app, port);
 });
