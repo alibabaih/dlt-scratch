@@ -6,6 +6,6 @@ WORKDIR /opt
 
 RUN npm install
 
-ENTRYPOINT ["npm" "run"]
+ENTRYPOINT ["npm", "run"]
 
 CMD ["node_1_debug"]
